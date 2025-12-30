@@ -1,0 +1,14 @@
+#!/bin/bash
+
+# run simulation
+yade -n -j 16 simpleGravityDeposition.py
+
+# export particle size distribution
+yade -n checkPSD.py
+
+# inspect results
+wslview results/psd.pdf 
+wslview results/fig0.pdf
+
+# export OpenFOAM dictionary entries
+yade -n exportPowderBed.py
