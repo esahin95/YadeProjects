@@ -9,7 +9,7 @@ import sys
 from timeit import default_timer
 
 # box dimensions
-theBox = (1.5e-3, 0.5e-3, 0.1e-3)
+theBox = (1.5e-3, 0.5e-3, 0.2e-3)
 
 # gravity
 gravity = (0.0, 0.0, -9.81)
@@ -97,12 +97,12 @@ O.engines = [
     # interaction physics
     InteractionLoop(
         [Ig2_Sphere_Sphere_ScGeom(), Ig2_Facet_Sphere_ScGeom()],
-        [Ip2_FrictMat_FrictMat_FrictPhys()],
-        [Law2_ScGeom_FrictPhys_CundallStrack()],
+        [Ip2_FrictMat_FrictMat_MindlinPhys(gamma=0.1, betan=0.2)],
+        [Law2_ScGeom_MindlinPhys_Mindlin(includeAdhesion=True)],
     ),
 
     # time integration
-    NewtonIntegrator(gravity = gravity),
+    NewtonIntegrator(gravity=gravity),
 
     # logging and controls
     PyRunner(command='addPlotData()', iterPeriod=200),
