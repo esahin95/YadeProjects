@@ -9,21 +9,25 @@ import sys
 from timeit import default_timer
 
 # box dimensions
-theBox = (1.5e-3, 0.5e-3, 0.2e-3)
+theBox = (200e-6, 800e-6, 200e-6)
 
 # gravity
 gravity = (0.0, 0.0, -9.81)
 
 # particle distribution
-theParticleDist = {"psdSizes":[40e-6, 60e-6], "psdCumm":[0.0, 1.0]}
+theParticleDist = {"psdSizes":[20e-6, 30e-6], "psdCumm":[0.0, 1.0]}
 
 # material parameters, scaled young modulus
 theMat = {
-    "young":110e+6, 
+    "young":130e+6, 
     "poisson":0.34, 
     "frictionAngle":radians(30), 
-    "density":4430, 
-    "label":"Ti64"
+    "density":8960, 
+    "label":"Cu"
+}
+theMatFunctor = {
+    "gamma":1.65,
+    "en":0.67
 }
 
 # PyRunner add data to plots
@@ -72,7 +76,7 @@ spIDs = sp.toSimulation(material=FrictMat(**theMat))
 print(f'added {len(sp)} particles to simulation')    
 
 # stopping criterion based on average velocity
-limitVelo = 5e-3
+limitVelo = 1e-3
 totalMass = sum(O.bodies[i].state.mass for i in spIDs) 
 print(f'total mass added to system is {totalMass:.5e}')
 limitKE = 0.5 * totalMass * limitVelo ** 2
@@ -97,7 +101,7 @@ O.engines = [
     # interaction physics
     InteractionLoop(
         [Ig2_Sphere_Sphere_ScGeom(), Ig2_Facet_Sphere_ScGeom()],
-        [Ip2_FrictMat_FrictMat_MindlinPhys(gamma=0.1, betan=0.2)],
+        [Ip2_FrictMat_FrictMat_MindlinPhys(gamma=theMatFunctor["gamma"], en=theMatFunctor["en"])],
         [Law2_ScGeom_MindlinPhys_Mindlin(includeAdhesion=True)],
     ),
 
