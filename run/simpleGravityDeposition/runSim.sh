@@ -1,4 +1,4 @@
 #!/bin/bash
 
 # run simulation
-yade -n -j 6 simpleGravityDeposition.py
+yade -n -j 12 simpleGravityDeposition.py

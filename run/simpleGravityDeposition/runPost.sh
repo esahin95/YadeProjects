@@ -1,14 +1,13 @@
 #!/bin/bash
 
-# export particle size distribution
+# Export particle size distribution
 yade -n checkPSD.py
 
-# inspect results
-wslview results/psd.pdf 
-wslview results/fig0.pdf
-wslview results/fig1.pdf
+# Extract powder bed
+yade -n extractPowderBed.py
 
-# export OpenFOAM dictionary entries
-yade exportPowderBed.py
-
-#cp results/powderBedDict ~/OpenFOAM/sahin-10/run/laserWeldNoPhaseChange/system/
+# Inspect results
+for file in results/*.pdf; do
+    [ -f "$file" ] || break
+    wslview "$file"
+done

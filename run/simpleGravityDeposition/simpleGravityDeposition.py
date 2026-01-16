@@ -4,6 +4,7 @@
 from yade import plot
 import numpy as np
 import sys
+import os
 from timeit import default_timer
 
 # ============================================================
@@ -42,6 +43,14 @@ theMatBox = {
 # Limit velocity at which to stop simulation
 limitVelo = 1e-3
 
+# Results
+outputDir = "results"
+try:
+    os.mkdir(outputDir)
+except FileExistsError:
+    print("Directory already exists")
+
+
 # ============================================================
 # SIMULATION CONTROL
 # ============================================================
@@ -65,13 +74,13 @@ def checkKinetic():
     if ke < limitKE:
         # Stop simulation
         O.pause()
-        O.save('results/simulation.yade')
+        O.save(os.path.join(outputDir, "simulation.yade"))
         print(f'simulation stopped at iteration {O.iter}')
 
         # Save results
         sp.fromSimulation()
-        sp.save('results/spherePack.txt')
-        plot.saveDataTxt('results/plotData.txt')
+        sp.save(os.path.join(outputDir, "spherePack"))
+        plot.saveDataTxt(os.path.join(outputDir, "tableData"))
 
 # Main simulation loop
 O.engines = [
@@ -135,7 +144,6 @@ O.trackEnergy = True
 
 # Define plots
 plot.plots = {'t': ('coordNum', 'unForce'), 't ': (O.energy.keys, None, 'Etot')}
-names = ["Forces", "Energy"]
 
 
 # ============================================================
@@ -154,7 +162,7 @@ print(f'Simulation took {default_timer()-t} s')
 # Save plots to file
 figs = plot.plot(subPlots=False, noShow=True)
 for i, fig in enumerate(figs):
-    fig.savefig(f'results/{names[i]}.pdf')
+    fig.savefig(os.path.join(outputDir, f"fig{i}.pdf"))
 
 # exit yade manually
 sys.exit(0)
