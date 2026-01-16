@@ -1,23 +1,25 @@
 # -*- encoding=utf-8 -*-
 
-### simple gravity deposition without compaction of resulting powder bed
-
 # import packages
 from yade import plot
 import numpy as np
 import sys
 from timeit import default_timer
 
-# box dimensions
+# ============================================================
+# SIMULATION PARAMETERS
+# ============================================================
+
+# Box dimensions
 theBox = (200e-6, 800e-6, 200e-6)
 
-# gravity
+# Gravitational acceleration
 gravity = (0.0, 0.0, -9.81)
 
-# particle distribution
-theParticleDist = {"psdSizes":[20e-6, 30e-6], "psdCumm":[0.0, 1.0]}
+# Particle distribution
+theParticleDist = {"psdSizes":[15e-6, 45e-6], "psdCumm":[0.0, 1.0]}
 
-# material parameters, scaled young modulus
+# Material parameters (scaled young modulus with 1e-3)
 theMat = {
     "young":130e+6, 
     "poisson":0.34, 
@@ -26,9 +28,23 @@ theMat = {
     "label":"Cu"
 }
 theMatFunctor = {
-    "gamma":1.65,
-    "en":0.67
+    "gamma":0.2,
+    "en":0.4
 }
+theMatBox = {
+    "young":210e+6, 
+    "poisson":0.3, 
+    "frictionAngle":radians(35), 
+    "density":7870, 
+    "label":"Fe"
+}
+
+# Limit velocity at which to stop simulation
+limitVelo = 1e-3
+
+# ============================================================
+# SIMULATION CONTROL
+# ============================================================
 
 # PyRunner add data to plots
 def addPlotData():
@@ -47,91 +63,98 @@ def checkKinetic():
     print(f'current kinetic energy: {ke:.4e}')
 
     if ke < limitKE:
-        # stop simulation and save state
+        # Stop simulation
         O.pause()
         O.save('results/simulation.yade')
         print(f'simulation stopped at iteration {O.iter}')
 
-        # save powder bed
+        # Save results
         sp.fromSimulation()
         sp.save('results/spherePack.txt')
-
-        # save plot data as text file
         plot.saveDataTxt('results/plotData.txt')
 
-# simulation boundary
-theBoxCenter = tuple(0.5*x for x in theBox)
-O.bodies.append(
-    geom.facetBox(
-        theBoxCenter, 
-        theBoxCenter, 
-        wallMask=31
-    )
-)
-
-# cloud of spherical particles
-sp = pack.SpherePack()
-sp.makeCloud((0,0,0), theBox, **theParticleDist)
-spIDs = sp.toSimulation(material=FrictMat(**theMat))
-print(f'added {len(sp)} particles to simulation')    
-
-# stopping criterion based on average velocity
-limitVelo = 1e-3
-totalMass = sum(O.bodies[i].state.mass for i in spIDs) 
-print(f'total mass added to system is {totalMass:.5e}')
-limitKE = 0.5 * totalMass * limitVelo ** 2
-print(f'stop simulation if kinetic energy drops below {limitKE}')
-
-# initialize cloud with mean falling velocity
-meanVelo = np.sign(gravity[2]) * np.sqrt(np.abs(theBox[2] * gravity[2]) * 0.5)
-for spID in spIDs:
-    O.bodies[spID].state.vel[2] = meanVelo
-print(f'particles initialized with velocity {meanVelo:.5e}')
-
-# simulation loop
+# Main simulation loop
 O.engines = [
-    # reset forces
+    # Reset forces
     ForceResetter(),
 
-    # fast collision detection
+    # Fast collision detection
     InsertionSortCollider(
         [Bo1_Sphere_Aabb(), Bo1_Facet_Aabb()]
     ),
 
-    # interaction physics
+    # Interaction physics
     InteractionLoop(
         [Ig2_Sphere_Sphere_ScGeom(), Ig2_Facet_Sphere_ScGeom()],
         [Ip2_FrictMat_FrictMat_MindlinPhys(gamma=theMatFunctor["gamma"], en=theMatFunctor["en"])],
         [Law2_ScGeom_MindlinPhys_Mindlin(includeAdhesion=True)],
     ),
 
-    # time integration
+    # Time integration
     NewtonIntegrator(gravity=gravity),
 
-    # logging and controls
+    # Logging and controls
     PyRunner(command='addPlotData()', iterPeriod=200),
     PyRunner(command='checkKinetic()', iterPeriod=10000)
 ]
 
-# critical timestep
-O.dt = 0.5 * PWaveTimeStep()
-print(f'critical timestep set to {O.dt:.5e}')
+# ============================================================
+# SCENE CONSTRUCTION
+# ============================================================
 
-# track energies
+# Simulation boundary
+theBoxCenter = tuple(0.5*x for x in theBox)
+O.bodies.append(
+    geom.facetBox(
+        theBoxCenter, 
+        theBoxCenter, 
+        wallMask=31,
+        material=FrictMat(**theMatBox)
+    )
+)
+
+# Cloud of spherical particles
+sp = pack.SpherePack()
+sp.makeCloud((0,0,0), theBox, **theParticleDist)
+spIDs = sp.toSimulation(material=FrictMat(**theMat))
+print(f'Added {len(sp)} particles to simulation')    
+
+# Stopping criterion based on average velocity
+totalMass = sum(O.bodies[i].state.mass for i in spIDs)
+limitKE = 0.5 * totalMass * limitVelo ** 2
+print(f'Stop simulation if kinetic energy drops below {limitKE}')
+
+# Initialize cloud with mean falling velocity in z-direction
+meanVelo = -np.sqrt(np.abs(theBox[2] * gravity[2]) * 0.5)
+for spID in spIDs:
+    O.bodies[spID].state.vel[2] = meanVelo
+print(f'Particles initialized with velocity {meanVelo:.5e}')
+
+# Track energies
 O.trackEnergy = True
 
-# define plots
+# Define plots
 plot.plots = {'t': ('coordNum', 'unForce'), 't ': (O.energy.keys, None, 'Etot')}
+names = ["Forces", "Energy"]
 
-# run simulation
+
+# ============================================================
+# SIMULATION
+# ============================================================
+
+# Set critical timestep
+O.dt = 0.5 * PWaveTimeStep()
+print(f'Critical timestep set to {O.dt:.5e}')
+
+# Run simulation
 t = default_timer()
 O.run(1000000, True)
 print(f'Simulation took {default_timer()-t} s')
 
-# save plots to file
+# Save plots to file
 figs = plot.plot(subPlots=False, noShow=True)
 for i, fig in enumerate(figs):
-    fig.savefig(f'results/fig{i}.pdf')
+    fig.savefig(f'results/{names[i]}.pdf')
 
 # exit yade manually
 sys.exit(0)
