@@ -1,5 +1,8 @@
 # Ignore VS Code
 .vscode/
 
+# ignore src directory downloaded from Gitlab
+src/
+
 # Ignore output directories 
 results/
