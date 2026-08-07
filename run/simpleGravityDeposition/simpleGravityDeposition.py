@@ -22,21 +22,21 @@ theParticleDist = {"psdSizes":[15e-6, 45e-6], "psdCumm":[0.0, 1.0]}
 
 # Material parameters (scaled young modulus with 1e-3)
 theMat = {
-    "young":130e+6, 
-    "poisson":0.34, 
-    "frictionAngle":radians(30), 
-    "density":8960, 
+    "young":130e+6,
+    "poisson":0.34,
+    "frictionAngle":radians(30),
+    "density":8960,
     "label":"Cu"
 }
 theMatFunctor = {
-    "gamma":0.2,
+    "gamma":0.01,
     "en":0.4
 }
 theMatBox = {
-    "young":210e+6, 
-    "poisson":0.3, 
-    "frictionAngle":radians(35), 
-    "density":7870, 
+    "young":210e+6,
+    "poisson":0.3,
+    "frictionAngle":radians(35),
+    "density":7870,
     "label":"Fe"
 }
 
@@ -45,10 +45,7 @@ limitVelo = 1e-3
 
 # Results
 outputDir = "results"
-try:
-    os.mkdir(outputDir)
-except FileExistsError:
-    print("Directory already exists")
+os.makedirs(outputDir, exist_ok=True)
 
 
 # ============================================================
@@ -58,10 +55,10 @@ except FileExistsError:
 # PyRunner add data to plots
 def addPlotData():
     plot.addData(
-        t=O.time, 
-        coordNum=avgNumInteractions(), 
-        unForce=unbalancedForce(), 
-        Etot=O.energy.total(), 
+        t=O.time,
+        coordNum=avgNumInteractions(),
+        unForce=unbalancedForce(),
+        Etot=O.energy.total(),
         **O.energy
     )
 
@@ -115,8 +112,8 @@ O.engines = [
 theBoxCenter = tuple(0.5*x for x in theBox)
 O.bodies.append(
     geom.facetBox(
-        theBoxCenter, 
-        theBoxCenter, 
+        theBoxCenter,
+        theBoxCenter,
         wallMask=31,
         material=FrictMat(**theMatBox)
     )
@@ -126,7 +123,7 @@ O.bodies.append(
 sp = pack.SpherePack()
 sp.makeCloud((0,0,0), theBox, **theParticleDist)
 spIDs = sp.toSimulation(material=FrictMat(**theMat))
-print(f'Added {len(sp)} particles to simulation')    
+print(f'Added {len(sp)} particles to simulation')
 
 # Stopping criterion based on average velocity
 totalMass = sum(O.bodies[i].state.mass for i in spIDs)
