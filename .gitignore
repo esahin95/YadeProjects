@@ -4,5 +4,5 @@
 # ignore src directory downloaded from Gitlab
 src/
 
-# Ignore output directories 
+# Ignore output directories
 results/

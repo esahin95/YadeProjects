@@ -41,11 +41,12 @@ theMatBox = {
 }
 
 # Limit velocity at which to stop simulation
-limitVelo = 1e-3
+limitVelo = 2e-3
 
 # Results
 outputDir = "results"
 os.makedirs(outputDir, exist_ok=True)
+os.makedirs(outputDir+'/tmp', exist_ok=True)
 
 
 # ============================================================
@@ -81,25 +82,17 @@ def checkKinetic():
 
 # Main simulation loop
 O.engines = [
-    # Reset forces
     ForceResetter(),
-
-    # Fast collision detection
     InsertionSortCollider(
         [Bo1_Sphere_Aabb(), Bo1_Facet_Aabb()]
     ),
-
-    # Interaction physics
     InteractionLoop(
         [Ig2_Sphere_Sphere_ScGeom(), Ig2_Facet_Sphere_ScGeom()],
         [Ip2_FrictMat_FrictMat_MindlinPhys(gamma=theMatFunctor["gamma"], en=theMatFunctor["en"])],
         [Law2_ScGeom_MindlinPhys_Mindlin(includeAdhesion=True)],
     ),
-
-    # Time integration
     NewtonIntegrator(gravity=gravity),
-
-    # Logging and controls
+    VTKRecorder(iterPeriod=10000, fileName=outputDir+'/tmp'+'/p1-', recorders=['spheres', 'facets']),
     PyRunner(command='addPlotData()', iterPeriod=200),
     PyRunner(command='checkKinetic()', iterPeriod=10000)
 ]
