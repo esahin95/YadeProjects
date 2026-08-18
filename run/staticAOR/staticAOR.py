@@ -18,18 +18,17 @@ dBunker = 2e-3
 hBunker = 2e-3 # 2e-3
 hOutput = 0.4e-3
 hPipe = 0.2e-3
-zHeight = 2.5e-3
+zHeight = 1.5e-3
 
 # Gravitational acceleration
 gravity = (0.0, 0.0, -9.81)
 
 # Material parameters
-scl = 1e-4 # 1e-3
 theMat = {
-    "young":130e+9*scl,
+    "young":130e+5,
     "poisson":0.34,
     "frictionAngle":radians(30),
-    "density":8960,
+    "density":89600,
     "label":"Cu"
 }
 theMatFunctor = {
@@ -45,8 +44,8 @@ theMatArt = {
 }
 
 # Powder parameters
-d10 = 35e-6 # 15e-6
-d90 = 45e-6
+d10 = 70e-6 # 15e-6
+d90 = 80e-6 # 45e-6
 
 # Limit velocity at which to stop simulation
 limitVelo = 2e-3
@@ -186,7 +185,7 @@ print(f'Critical timestep set to {O.dt:.5e}')
 # Run simulation
 O.saveTmp()
 t = default_timer()
-O.run(1001, True)
+O.run(500001, True)
 print(f'Simulation took {default_timer()-t} s')
 
 # Save results
@@ -194,6 +193,11 @@ O.save(os.path.join(outputDir, "simulation.yade"))
 sp.fromSimulation()
 sp.save(os.path.join(outputDir, "spherePack"))
 plot.saveDataTxt(os.path.join(outputDir, "tableData"))
+
+# Save plots to file
+figs = plot.plot(subPlots=False, noShow=True)
+for i, fig in enumerate(figs):
+    fig.savefig(os.path.join(outputDir, f"fig{i}.pdf"))
 
 # exit yade manually
 sys.exit(0)
