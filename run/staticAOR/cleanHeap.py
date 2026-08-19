@@ -10,20 +10,12 @@ from scipy.spatial import KDTree
 # PARAMETERS
 # ============================================================
 
-# Meters to micrometers
-convertToMicrons = 1e+6
-
-# parameters for histogram
-theHist = {
-    "bins":10,
-    "density":True
-}
-
 # Inputs and Outputs
 outputDir = "results"
 theImg = {
     "dpi":300,
     "bbox_inches":"tight",
+    "pad_inches":0,
     "format":"pdf"
 }
 
@@ -31,6 +23,7 @@ theImg = {
 logger = logging.getLogger(__name__)
 logName = os.path.join(outputDir, 'cleanHeap.log')
 logging.basicConfig(filename=logName, level=logging.INFO, filemode='w')
+
 
 # ============================================================
 # IMPLEMENTATION OF DBSCAN
@@ -100,7 +93,8 @@ counts = np.bincount(cluster)
 logger.info(f'Identified clusters with particle counts\n{counts}')
 
 # scatter plot of biggest cluster
-fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+fig = plt.figure()
+ax = fig.add_axes([0, 0, 1, 1], projection="3d")
 i = np.argmax(counts)
 ax.scatter(X[cluster==i,0], X[cluster==i,1], X[cluster==i,2], s=5)
 Lx = ax.get_xlim()[1] - ax.get_xlim()[0]
